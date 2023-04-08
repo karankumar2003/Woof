@@ -7,11 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.woof.ui.theme.WoofTheme
-
-
-import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,16 +19,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Expand
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.woof.data.Dog
 import com.example.woof.data.dogs
-import com.example.woof.ui.theme.WoofTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,11 +54,11 @@ fun WoofApp() {
         topBar = {
             TopAppBar()
         }
-    ) {
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(paddingValues)
                 .background(MaterialTheme.colors.background)
 
         ) {
@@ -70,21 +74,45 @@ fun WoofApp() {
 
 @Composable
 fun DogItem(dog: Dog, modifier: Modifier = Modifier) {
+    var expandedState by remember {
+        mutableStateOf(false)
+    }
 
     Card(
         modifier = modifier
             .padding(8.dp),
         elevation = 4.dp
     ) {
-
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
+                .animateContentSize(
+                    spring(
+                        Spring.DampingRatioMediumBouncy,
+                        Spring.StiffnessLow
+                    )
+                )
         ) {
-            DogIcon(dog.imageResourceId)
-            DogInformation(dog.name, dog.age)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DogIcon(dog.imageResourceId)
+                DogInformation(dog.name, dog.age)
+                Spacer(modifier = Modifier.weight(1f))
+                ExpandIconButton(expanded = expandedState,
+                    { expandedState = !expandedState }
+                )
+
+            }
+            if (expandedState) {
+                DogHobby(hobbyRes = dog.hobbies)
+            }
+
         }
+
+
     }
 
 }
@@ -117,6 +145,42 @@ fun DogInformation(@StringRes dogName: Int, dogAge: Int, modifier: Modifier = Mo
             style = MaterialTheme.typography.body1
         )
     }
+}
+
+@Composable
+fun ExpandIconButton(
+    expanded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+            contentDescription = "Tap to Expand Or Collapse"
+        )
+    }
+}
+
+@Composable
+fun DogHobby(@StringRes hobbyRes: Int, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .padding(
+                start = 8.dp,
+                end = 8.dp,
+                bottom = 8.dp
+            )
+    ) {
+        Text(
+            "Hobby:",
+            style = MaterialTheme.typography.h3
+        )
+        Text(
+            stringResource(id = hobbyRes),
+            style = MaterialTheme.typography.body1
+        )
+    }
+
 }
 
 @Composable
